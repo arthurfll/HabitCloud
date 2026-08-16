@@ -56,13 +56,15 @@ public class CategoryService : ICategoryService
         if (currentCount >= CategoryOptions.MaxCategoriesPerUser)
             return CategoryResult.Fail(CategoryOperationError.LimitReached);
 
+        var now = DateTime.UtcNow;
         var category = new Category
         {
             Name = name,
             Icon = icon,
             Color = color,
             UserId = userId,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = now,
+            UpdatedAt = now,
         };
 
         await _repository.AddAsync(category);
@@ -118,9 +120,27 @@ public class CategoryService : ICategoryService
         return await SaveAndBroadcastAsync(category, userId);
     }
 
+    public async Task<CategoryResult> DeleteAsync(string userId, int categoryId)
+    {
+        var category = await _repository.GetByIdAsync(categoryId);
+        var ownershipError = ValidateOwnership(category, userId);
+        if (ownershipError is not null)
+            return CategoryResult.Fail(ownershipError.Value);
+
+        category!.IsDeleted = true;
+        category.UpdatedAt = DateTime.UtcNow;
+        _repository.Update(category);
+        await _repository.SaveChangesAsync();
+
+        var dto = ToDto(category);
+        await _hubContext.Clients.User(userId).CategoryDeleted(dto);
+
+        return CategoryResult.Ok(dto);
+    }
+
     private static CategoryOperationError? ValidateOwnership(Category? category, string userId)
     {
-        if (category is null)
+        if (category is null || category.IsDeleted)
             return CategoryOperationError.NotFound;
 
         if (!string.Equals(category.UserId, userId, StringComparison.Ordinal))
@@ -131,6 +151,7 @@ public class CategoryService : ICategoryService
 
     private async Task<CategoryResult> SaveAndBroadcastAsync(Category category, string userId)
     {
+        category.UpdatedAt = DateTime.UtcNow;
         _repository.Update(category);
         await _repository.SaveChangesAsync();
 
@@ -146,5 +167,7 @@ public class CategoryService : ICategoryService
         Name = category.Name,
         Icon = category.Icon,
         Color = category.Color,
+        UpdatedAt = category.UpdatedAt,
+        IsDeleted = category.IsDeleted,
     };
 }

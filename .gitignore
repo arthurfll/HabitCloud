@@ -55,3 +55,17 @@ Thumbs.db
 
 ## Docker volumes
 Docker/Volume/
+
+## Flutter / Dart / Android (App/)
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+*.iml
+App/android/local.properties
+App/android/.gradle/
+App/android/key.properties
+App/**/*.jks
+App/**/*.keystore

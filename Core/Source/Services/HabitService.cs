@@ -65,7 +65,7 @@ public class HabitService : IHabitService
         }
 
         var category = await _categoryRepository.GetByIdAsync(categoryId);
-        if (category is null || !string.Equals(category.UserId, userId, StringComparison.Ordinal))
+        if (category is null || category.IsDeleted || !string.Equals(category.UserId, userId, StringComparison.Ordinal))
         {
             return HabitResult.Fail(HabitOperationError.InvalidCategory);
         }
@@ -82,6 +82,7 @@ public class HabitService : IHabitService
             return HabitResult.Fail(HabitOperationError.LimitReached);
         }
 
+        var now = DateTime.UtcNow;
         var habit = new Habito
         {
             Name = name,
@@ -92,7 +93,8 @@ public class HabitService : IHabitService
             DayOfMonth = frequencyType == HabitFrequencyType.DayOfMonth ? dayOfMonth : null,
             DayOfWeek = frequencyType == HabitFrequencyType.DayOfWeek ? dayOfWeek : null,
             StartDate = DateOnly.FromDateTime(DateTime.Now),
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = now,
+            UpdatedAt = now,
         };
 
         await _habitRepository.AddAsync(habit);
@@ -121,11 +123,32 @@ public class HabitService : IHabitService
         }
 
         habit!.Name = name;
+        habit.UpdatedAt = DateTime.UtcNow;
         _habitRepository.Update(habit);
         await _habitRepository.SaveChangesAsync();
 
         var dto = ToDto(habit);
         await _hubContext.Clients.User(userId).HabitUpdated(dto);
+
+        return HabitResult.Ok(dto);
+    }
+
+    public async Task<HabitResult> DeleteAsync(string userId, int habitId)
+    {
+        var habit = await _habitRepository.GetByIdAsync(habitId);
+        var ownershipError = ValidateOwnership(habit, userId);
+        if (ownershipError is not null)
+        {
+            return HabitResult.Fail(ownershipError.Value);
+        }
+
+        habit!.IsDeleted = true;
+        habit.UpdatedAt = DateTime.UtcNow;
+        _habitRepository.Update(habit);
+        await _habitRepository.SaveChangesAsync();
+
+        var dto = ToDto(habit);
+        await _hubContext.Clients.User(userId).HabitDeleted(dto);
 
         return HabitResult.Ok(dto);
     }
@@ -177,22 +200,41 @@ public class HabitService : IHabitService
         }
 
         var entry = await _entryRepository.GetAsync(habitId, date);
+        var now = DateTime.UtcNow;
         string newStatus;
 
-        if (entry is null)
+        if (entry is null || entry.IsDeleted)
         {
-            await _entryRepository.AddAsync(new HabitEntry { HabitId = habitId, Date = date, Status = HabitEntryStatus.Done });
+            // A previously toggled-off entry is soft-deleted (tombstoned) for sync purposes, not
+            // removed, so the unique (HabitId, Date) index requires reviving that same row instead
+            // of inserting a fresh one.
+            if (entry is null)
+            {
+                entry = new HabitEntry { HabitId = habitId, Date = date, Status = HabitEntryStatus.Done, CreatedAt = now, UpdatedAt = now };
+                await _entryRepository.AddAsync(entry);
+            }
+            else
+            {
+                entry.Status = HabitEntryStatus.Done;
+                entry.IsDeleted = false;
+                entry.UpdatedAt = now;
+                _entryRepository.Update(entry);
+            }
+
             newStatus = HabitEntryStatus.Done.ToString();
         }
         else if (entry.Status == HabitEntryStatus.Done)
         {
             entry.Status = HabitEntryStatus.NotDone;
+            entry.UpdatedAt = now;
             _entryRepository.Update(entry);
             newStatus = HabitEntryStatus.NotDone.ToString();
         }
         else
         {
-            _entryRepository.Remove(entry);
+            entry.IsDeleted = true;
+            entry.UpdatedAt = now;
+            _entryRepository.Update(entry);
             newStatus = "None";
         }
 
@@ -241,7 +283,7 @@ public class HabitService : IHabitService
 
     private static HabitOperationError? ValidateOwnership(Habito? habit, string userId)
     {
-        if (habit is null)
+        if (habit is null || habit.IsDeleted)
         {
             return HabitOperationError.NotFound;
         }
@@ -254,7 +296,7 @@ public class HabitService : IHabitService
         return null;
     }
 
-    private static HabitOperationError? ValidateFrequency(HabitFrequencyType type, int? intervalDays, int? dayOfMonth, DayOfWeek? dayOfWeek)
+    public static HabitOperationError? ValidateFrequency(HabitFrequencyType type, int? intervalDays, int? dayOfMonth, DayOfWeek? dayOfWeek)
     {
         switch (type)
         {
@@ -305,6 +347,9 @@ public class HabitService : IHabitService
         IntervalDays = habit.IntervalDays,
         DayOfMonth = habit.DayOfMonth,
         DayOfWeek = habit.DayOfWeek,
+        StartDate = habit.StartDate,
         FrequencyLabel = BuildFrequencyLabel(habit),
+        UpdatedAt = habit.UpdatedAt,
+        IsDeleted = habit.IsDeleted,
     };
 }
