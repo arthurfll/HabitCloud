@@ -2,7 +2,6 @@
 **/Migrations/
 **/bin/
 **/obj/
-appsettings.json
 
 ## Git / IDE
 .git/
