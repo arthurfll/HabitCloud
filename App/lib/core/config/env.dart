@@ -17,7 +17,7 @@ class Env {
   /// machine during development; override for a real device or production deployment.
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:7010',
+    defaultValue: 'http://10.0.2.2:8080',
   );
 
   static String get categoryHubUrl => '$apiBaseUrl/hubs/category';
