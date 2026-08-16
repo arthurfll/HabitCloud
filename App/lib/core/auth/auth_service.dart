@@ -59,5 +59,25 @@ class AuthService {
     return Amplify.Auth.confirmSignUp(username: email, confirmationCode: code);
   }
 
+  Future<ResendSignUpCodeResult> resendSignUpCode({required String email}) {
+    return Amplify.Auth.resendSignUpCode(username: email);
+  }
+
+  Future<ResetPasswordResult> resetPassword({required String email}) {
+    return Amplify.Auth.resetPassword(username: email);
+  }
+
+  Future<void> confirmResetPassword({
+    required String email,
+    required String newPassword,
+    required String code,
+  }) {
+    return Amplify.Auth.confirmResetPassword(username: email, newPassword: newPassword, confirmationCode: code);
+  }
+
+  Future<void> updatePassword({required String oldPassword, required String newPassword}) {
+    return Amplify.Auth.updatePassword(oldPassword: oldPassword, newPassword: newPassword);
+  }
+
   Future<void> signOut() => Amplify.Auth.signOut();
 }

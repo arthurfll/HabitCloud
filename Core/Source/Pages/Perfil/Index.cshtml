@@ -1,0 +1,24 @@
+@page
+@model Core.Source.Pages.Perfil.IndexModel
+@{
+    ViewData["Title"] = "Perfil";
+}
+
+<h1 class="h3 mb-4">Perfil</h1>
+
+<div class="card" style="max-width: 480px;">
+    <div class="card-body d-flex flex-column gap-3">
+        <div>
+            <div class="text-muted small">E-mail</div>
+            <div class="fs-5">@Model.Email</div>
+        </div>
+
+        <a class="btn btn-outline-primary" asp-controller="Account" asp-action="ChangePassword">
+            <i class="bi bi-key me-1"></i> Alterar senha
+        </a>
+
+        <a class="btn btn-outline-danger" asp-controller="Account" asp-action="Logout">
+            <i class="bi bi-box-arrow-right me-1"></i> Sair
+        </a>
+    </div>
+</div>

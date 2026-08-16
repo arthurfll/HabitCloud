@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/app_scope.dart';
@@ -35,12 +37,24 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    _signedInFuture = AuthService.instance.isSignedIn();
+    _signedInFuture = _checkSignedIn();
+  }
+
+  /// Also (re)kicks off the first-login SignalR bootstrap whenever the user turns out to be
+  /// signed in. That original attempt (fired right after sign-in in LoginScreen) can silently
+  /// fail on a bad connection with nothing left to retry it, so every app start doubles as a
+  /// retry; runInitialSyncIfNeeded() itself no-ops instantly once the bootstrap has completed.
+  Future<bool> _checkSignedIn() async {
+    final signedIn = await AuthService.instance.isSignedIn();
+    if (signedIn && mounted) {
+      unawaited(AppScope.of(context).syncService.runInitialSyncIfNeeded());
+    }
+    return signedIn;
   }
 
   void _onSignedIn() {
     setState(() {
-      _signedInFuture = Future.value(true);
+      _signedInFuture = _checkSignedIn();
     });
   }
 

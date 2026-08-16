@@ -60,6 +60,23 @@ builder.Services
         options.Scope.Add("email");
         options.Scope.Add("profile");
         options.TokenValidationParameters.NameClaimType = "email";
+        options.Events = new OpenIdConnectEvents
+        {
+            // AccountController.ChangePassword() sets this property to send the user straight to
+            // Cognito Hosted UI's "forgot password" screen instead of its login screen, while still
+            // going through the normal Challenge()/state/PKCE machinery so the /signin-oidc callback
+            // validates and signs the user back in exactly like a regular login.
+            OnRedirectToIdentityProvider = context =>
+            {
+                if (context.Properties.Items.ContainsKey("prompt_forgot_password"))
+                {
+                    context.ProtocolMessage.IssuerAddress = context.ProtocolMessage.IssuerAddress
+                        .Replace("/oauth2/authorize", "/forgotPassword");
+                }
+
+                return Task.CompletedTask;
+            },
+        };
     })
     .AddJwtBearer("Bearer", options =>
     {

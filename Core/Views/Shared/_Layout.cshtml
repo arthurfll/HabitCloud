@@ -13,35 +13,46 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HabitCloud</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Categoria/Index">Categorias</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Habito/Index">Hábitos</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+        <nav class="navbar navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid justify-content-center position-relative">
+                <a class="navbar-brand mb-0" asp-area="" asp-controller="Home" asp-action="Index">HabitCloud</a>
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                    <a class="btn btn-primary btn-sm position-absolute top-50 end-0 translate-middle-y me-3" asp-controller="Account" asp-action="Login">Entrar</a>
+                }
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container @(User.Identity?.IsAuthenticated == true ? "pb-nav" : "")">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        var currentPath = Context.Request.Path.Value?.ToLowerInvariant() ?? "/";
+        <nav class="bottom-nav fixed-bottom bg-white border-top">
+            <div class="d-flex justify-content-around">
+                <a class="bottom-nav-link @(currentPath == "/" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house"></i>
+                    <span>Home</span>
+                </a>
+                <a class="bottom-nav-link @(currentPath.StartsWith("/habito") ? "active" : "")" asp-page="/Habito/Index">
+                    <i class="bi bi-list-check"></i>
+                    <span>Hábitos</span>
+                </a>
+                <a class="bottom-nav-link @(currentPath.StartsWith("/categoria") ? "active" : "")" asp-page="/Categoria/Index">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <span>Categorias</span>
+                </a>
+                <a class="bottom-nav-link @(currentPath.StartsWith("/perfil") ? "active" : "")" asp-page="/Perfil/Index">
+                    <i class="bi bi-person"></i>
+                    <span>Perfil</span>
+                </a>
+            </div>
+        </nav>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

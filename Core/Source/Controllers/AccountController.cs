@@ -21,6 +21,13 @@ public class AccountController : Controller
         return Challenge(new AuthenticationProperties { RedirectUri = returnUrl }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
+    public IActionResult ChangePassword(string? returnUrl = "/")
+    {
+        var properties = new AuthenticationProperties { RedirectUri = returnUrl };
+        properties.Items["prompt_forgot_password"] = "1";
+        return Challenge(properties, OpenIdConnectDefaults.AuthenticationScheme);
+    }
+
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

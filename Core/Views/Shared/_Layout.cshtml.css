@@ -46,3 +46,31 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+.pb-nav {
+  padding-bottom: 70px;
+}
+
+.bottom-nav {
+  z-index: 1030;
+}
+
+.bottom-nav-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  color: #6c757d;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.bottom-nav-link i {
+  font-size: 1.25rem;
+}
+
+.bottom-nav-link.active {
+  color: #0d6efd;
+}

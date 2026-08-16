@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/auth/auth_service.dart';
+import '../auth/change_password_screen.dart';
 import '../categories/categories_screen.dart';
 import '../habits/habits_screen.dart';
 import 'home_screen.dart';
@@ -24,12 +25,19 @@ class _HomeShellState extends State<HomeShell> {
     widget.onSignedOut();
   }
 
+  void _openChangePassword() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_index]),
-        actions: [IconButton(onPressed: _signOut, icon: const Icon(Icons.logout), tooltip: 'Sair')],
+        actions: [
+          IconButton(onPressed: _openChangePassword, icon: const Icon(Icons.lock_outline), tooltip: 'Alterar senha'),
+          IconButton(onPressed: _signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
+        ],
       ),
       body: IndexedStack(
         index: _index,
