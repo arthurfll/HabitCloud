@@ -1,0 +1,28 @@
+@model CategoryDto
+
+<div class="category-row d-flex align-items-center gap-2 p-2 border rounded bg-white" data-id="@Model.Id">
+    <input type="text"
+           class="form-control category-name-input"
+           maxlength="50"
+           value="@Model.Name"
+           data-id="@Model.Id"
+           placeholder="Nome da categoria"
+           aria-label="Nome da categoria" />
+    <button type="button"
+            class="category-color-circle category-picker-trigger"
+            data-id="@Model.Id"
+            data-icon="@Model.Icon"
+            data-color="@Model.Color"
+            style="background-color:@Model.Color"
+            title="Alterar ícone e cor"
+            aria-label="Alterar ícone e cor"></button>
+    <button type="button"
+            class="category-icon-btn category-picker-trigger"
+            data-id="@Model.Id"
+            data-icon="@Model.Icon"
+            data-color="@Model.Color"
+            title="Alterar ícone e cor"
+            aria-label="Alterar ícone e cor">
+        <i class="bi @Model.Icon"></i>
+    </button>
+</div>

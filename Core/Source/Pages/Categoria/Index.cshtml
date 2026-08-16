@@ -1,0 +1,145 @@
+@page
+@model Core.Source.Pages.Categoria.IndexModel
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/categoria.css" asp-append-version="true" />
+}
+
+<div id="categoriaApp"
+     data-max-categories="@Model.MaxCategories"
+     data-page-size="@Model.Categories.PageSize"
+     data-total-count="@Model.Categories.TotalCount"
+     data-current-page="@Model.Categories.Page"
+     data-hub-url="@Url.Content("~/hubs/category")">
+
+    <form id="antiForgeryForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">Categorias</h1>
+        <button type="button" id="btnAddCategory" class="btn btn-primary"
+                data-bs-toggle="modal" data-bs-target="#createModal"
+                @(Model.Categories.TotalCount >= Model.MaxCategories ? "disabled" : "")>
+            <i class="bi bi-plus-lg me-1"></i> Adicionar categoria
+        </button>
+    </div>
+
+    <p id="limitMessage" class="text-danger small @(Model.Categories.TotalCount >= Model.MaxCategories ? "" : "d-none")">
+        Você atingiu o limite de @Model.MaxCategories categorias.
+    </p>
+
+    <div id="categoryList" class="d-flex flex-column gap-2">
+        @foreach (var category in Model.Categories.Items)
+        {
+            <partial name="_CategoryRow" model="category" />
+        }
+    </div>
+
+    <div id="emptyState" class="text-center text-muted py-5 @(Model.Categories.Items.Count > 0 ? "d-none" : "")">
+        Nenhuma categoria cadastrada ainda.
+    </div>
+
+    @if (Model.Categories.TotalPages > 1)
+    {
+        <nav class="mt-4" aria-label="Paginação de categorias">
+            <ul class="pagination justify-content-center flex-wrap">
+                <li class="page-item @(Model.Categories.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(Model.Categories.Page - 1)">Anterior</a>
+                </li>
+                @for (var i = 1; i <= Model.Categories.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Categories.Page ? "active" : "")">
+                        <a class="page-link" href="?page=@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Categories.Page >= Model.Categories.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(Model.Categories.Page + 1)">Próxima</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- Modal: nova categoria -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="newCategoryName" class="form-label">Nome</label>
+                    <input type="text" id="newCategoryName" class="form-control" maxlength="50" placeholder="Ex: Treino" />
+                </div>
+
+                <div class="mb-2 d-flex align-items-center gap-2">
+                    <span class="form-label mb-0">Pré-visualização:</span>
+                    <span id="newCategoryPreview" class="category-color-circle" data-icon="@Model.AvailableIcons.First()" data-color="@Model.AvailableColors.First()" style="background-color:@Model.AvailableColors.First()"></span>
+                    <span class="category-icon-btn"><i id="newCategoryPreviewIcon" class="bi @Model.AvailableIcons.First()"></i></span>
+                </div>
+
+                <h6 class="text-muted">Ícone</h6>
+                <div id="createIconGrid" class="icon-grid mb-4">
+                    @foreach (var icon in Model.AvailableIcons)
+                    {
+                        <button type="button" class="icon-option @(icon == Model.AvailableIcons.First() ? "selected" : "")" data-icon="@icon" title="@icon">
+                            <i class="bi @icon"></i>
+                        </button>
+                    }
+                </div>
+                <h6 class="text-muted">Cor</h6>
+                <div id="createColorGrid" class="color-grid">
+                    @foreach (var color in Model.AvailableColors)
+                    {
+                        <button type="button" class="color-option @(color == Model.AvailableColors.First() ? "selected" : "")" data-color="@color" style="background-color:@color" title="@color"></button>
+                    }
+                </div>
+
+                <div id="createError" class="text-danger small mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnCreateCategory" class="btn btn-primary">Criar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: seletor de ícone e cor (edição de categoria existente) -->
+<div class="modal fade" id="pickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ícone e cor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="text-muted">Ícone</h6>
+                <div class="icon-grid mb-4">
+                    @foreach (var icon in Model.AvailableIcons)
+                    {
+                        <button type="button" class="icon-option" data-icon="@icon" title="@icon">
+                            <i class="bi @icon"></i>
+                        </button>
+                    }
+                </div>
+                <h6 class="text-muted">Cor</h6>
+                <div class="color-grid">
+                    @foreach (var color in Model.AvailableColors)
+                    {
+                        <button type="button" class="color-option" data-color="@color" style="background-color:@color" title="@color"></button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script src="~/js/categoria.js" asp-append-version="true"></script>
+}

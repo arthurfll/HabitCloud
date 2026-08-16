@@ -1,0 +1,24 @@
+## Especificos do projeto
+**/Migrations/
+**/bin/
+**/obj/
+appsettings.json
+
+## Git / IDE
+.git/
+.gitignore
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+## Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+## Outros
+**/*.md
+**/*.log
+[Tt]est[Rr]esult*/

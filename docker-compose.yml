@@ -1,0 +1,39 @@
+services:
+  core:
+    build:
+      context: ./Core
+      dockerfile: Dockerfile
+    image: core:latest
+    container_name: core
+    restart: unless-stopped
+    ports:
+      - "7010:7010"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:7010
+      ConnectionStrings__AppDbContextConnection: "Host=postgres;Port=5432;Database=core;Username=postgres;Password=postgres"
+    volumes:
+      - ./Core/appsettings.json:/app/appsettings.json:ro
+    depends_on:
+      - postgres
+    networks:
+      - core-network
+
+  postgres:
+    image: postgres:16
+    container_name: core-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: core
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./Docker/Volume/Postgres:/var/lib/postgresql/data
+    networks:
+      - core-network
+
+networks:
+  core-network:
+    driver: bridge
