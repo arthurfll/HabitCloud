@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,15 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("AppDbContextConnection") ?? throw new InvalidOperationException("Connection string 'AppDbContextConnection' not found.");
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+
+// Azure Container Apps runs multiple (and frequently replaced) replicas, each with its own ephemeral
+// /root/.aspnet/DataProtection-Keys. Without a shared key ring, the OIDC "state" protected on the
+// Challenge request can't be unprotected on the callback if it lands on a different replica, which
+// surfaces as "Unable to unprotect the message.State." Persisting keys to the same Postgres database
+// (already shared across replicas) fixes that.
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<AppDbContext>()
+    .SetApplicationName("HabitCloud");
 
 var cognitoOptions = builder.Configuration.GetSection(CognitoOptions.SectionName).Get<CognitoOptions>()
     ?? throw new InvalidOperationException($"Configuration section '{CognitoOptions.SectionName}' not found.");

@@ -13,11 +13,12 @@ class Env {
   /// Cognito Hosted UI domain, e.g. "habitcloud.auth.us-east-2.amazoncognito.com".
   static const cognitoDomain = 'us-east-2not6oszns.auth.us-east-2.amazoncognito.com';
 
-  /// Base URL of the Core API. Points at the Android emulator's loopback alias to the host
-  /// machine during development; override for a real device or production deployment.
+  /// Base URL of the Core API. Defaults to the public production deployment; override with
+  /// --dart-define=API_BASE_URL=http://10.0.2.2:8080 to hit a Core instance running locally
+  /// via the Android emulator's loopback alias to the host machine instead.
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080',
+    defaultValue: 'https://www.habitcloud.arthurfll.net',
   );
 
   static String get categoryHubUrl => '$apiBaseUrl/hubs/category';
