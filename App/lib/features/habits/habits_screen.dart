@@ -34,6 +34,21 @@ class HabitsScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _delete(BuildContext context, HabitRepository repo, HabitWithCategory h) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir hábito?'),
+        content: Text('Tem certeza que deseja excluir "${h.habit.name}"? Essa ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Excluir')),
+        ],
+      ),
+    );
+    if (confirmed == true) await repo.delete(h.habit.id);
+  }
+
   String _frequencyLabel(HabitWithCategory h) {
     switch (h.habit.frequencyType) {
       case HabitFrequencyType.everyNDays:
@@ -78,7 +93,10 @@ class HabitsScreen extends StatelessWidget {
                   ),
                   title: Text(h.habit.name),
                   subtitle: Text(_frequencyLabel(h)),
-                  trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => repo.delete(h.habit.id)),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _delete(context, repo, h),
+                  ),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => HabitDetailScreen(habitId: h.habit.id))),
                 ),
               );

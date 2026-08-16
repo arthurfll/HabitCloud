@@ -18,7 +18,7 @@ class Env {
   /// via the Android emulator's loopback alias to the host machine instead.
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://www.habitcloud.arthurfll.net',
+    defaultValue: 'https://habitcloud.nicerock-0939b7f9.brazilsouth.azurecontainerapps.io',
   );
 
   static String get categoryHubUrl => '$apiBaseUrl/hubs/category';

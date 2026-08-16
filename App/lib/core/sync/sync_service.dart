@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 
 import '../db/app_database.dart';
 import '../models/category_model.dart';
@@ -13,6 +16,8 @@ String _catTempId(int localId) => 'local-cat-$localId';
 String _habitTempId(int localId) => 'local-habit-$localId';
 String _entryTempId(int localId) => 'local-entry-$localId';
 
+enum InitialSyncStatus { idle, syncing, success, failed }
+
 /// Drives both sync paths described in the app's design: the one-shot SignalR bootstrap right
 /// after first login, and the incremental two-way REST sync (Core/Source/Controllers/Api/SyncController.cs)
 /// used by the ~2am background backup job. Both are wrapped in [withColdStartRetry] because the
@@ -22,19 +27,91 @@ class SyncService {
   final ApiClient _api;
   final SyncHubClient _hub;
 
+  /// Lets the UI show progress/failure for the interactive initial-sync path instead of it running
+  /// as an invisible, unawaited future — a silent multi-minute retry loop is indistinguishable from
+  /// "the app is broken" to whoever is staring at an empty screen.
+  final ValueNotifier<InitialSyncStatus> initialSyncStatus = ValueNotifier(InitialSyncStatus.idle);
+
+  /// The last exception seen while retrying the initial sync, so the failure banner can show
+  /// *why* instead of just "it failed" — needed because "no data" can mean anything from a
+  /// timeout to a 401 to a JSON shape mismatch, each with a completely different fix.
+  final ValueNotifier<Object?> initialSyncError = ValueNotifier(null);
+
+  /// Bumped after every successful [runBackupSync], so screens that load local data via a
+  /// one-shot Future (rather than a Drift stream that updates itself) know when to refetch.
+  final ValueNotifier<int> syncVersion = ValueNotifier(0);
+
+  bool _isSyncing = false;
+  bool _rerunRequested = false;
+  Timer? _debounceTimer;
+
   SyncService(this._db, {ApiClient? api, SyncHubClient? hub}) : _api = api ?? ApiClient.instance, _hub = hub ?? SyncHubClient();
+
+  /// Entry point for every automatic sync trigger (app open, app resume, periodic timer, and
+  /// every local write via [requestSync]): coalesces concurrent callers into a single
+  /// [runBackupSync] instead of racing, and silently re-runs itself if a write came in while a
+  /// sync was already in flight, so nothing gets dropped.
+  Future<void> syncNow() async {
+    if (_isSyncing) {
+      _rerunRequested = true;
+      return;
+    }
+    _isSyncing = true;
+    try {
+      final ok = await runBackupSync();
+      if (ok) syncVersion.value++;
+    } catch (_) {
+      // Silent by design — a background sync failing (e.g. offline, or the ~30s cold-start
+      // window on Core's Azure Container Apps hosting still not being enough) isn't something
+      // the user needs to see; the next trigger (edit, resume, or the periodic timer) retries it.
+    } finally {
+      _isSyncing = false;
+      if (_rerunRequested) {
+        _rerunRequested = false;
+        unawaited(syncNow());
+      }
+    }
+  }
+
+  /// Called after every local write (habit/category/entry create-update-delete-toggle) so changes
+  /// reach the cloud without the user having to do anything. Debounced so a burst of edits — e.g.
+  /// quickly toggling several habits — collapses into one sync call instead of one per edit.
+  void requestSync() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 800), syncNow);
+  }
 
   Future<bool> runInitialSyncIfNeeded({void Function(int attempt, Object error)? onRetry}) async {
     final state = await _db.ensureSyncState();
-    if (state.hasCompletedInitialSync) return true;
+    if (state.hasCompletedInitialSync) {
+      initialSyncStatus.value = InitialSyncStatus.success;
+      return true;
+    }
 
+    initialSyncStatus.value = InitialSyncStatus.syncing;
+    initialSyncError.value = null;
+
+    // Unlike the ~2am background job (which nobody is watching, so it's fine to hammer quietly for
+    // ~10 minutes before giving up until the next scheduled run), this path runs in front of a user
+    // who just logged in — fail fast-ish and let them retry on demand instead of staring at a blank
+    // screen for a long, silent stretch. Still needs a handful of attempts with real spacing though:
+    // Core runs on Azure Container Apps, which scales to zero, so the very first request after a
+    // period of inactivity can hit a cold container and fail (or hang past the negotiate timeout)
+    // while it spins back up — the 2nd/3rd attempt is what actually gets through.
     final result = await withColdStartRetry(() async {
       final categories = await _hub.fetchAllCategories();
       final habits = await _hub.fetchAllHabits();
       return (categories, habits);
-    }, onAttemptFailed: onRetry);
+    }, maxAttempts: 3, delay: const Duration(seconds: 10), onAttemptFailed: (attempt, error) {
+      debugPrint('[SyncService] initial sync attempt $attempt failed: $error');
+      initialSyncError.value = error;
+      onRetry?.call(attempt, error);
+    });
 
-    if (result == null) return false;
+    if (result == null) {
+      initialSyncStatus.value = InitialSyncStatus.failed;
+      return false;
+    }
     final (categories, habits) = result;
 
     await _db.transaction(() async {
@@ -44,11 +121,20 @@ class SyncService {
       for (final h in habits) {
         await _upsertHabitFromServer(h);
       }
+      // Deliberately leaves lastSyncedAt untouched (still null on a fresh install): this
+      // bootstrap only pulled categories/habits, never habit entries. If it stamped lastSyncedAt
+      // as "now" here, the very next runBackupSync would send that recent cutoff to Core and
+      // only get back entries changed after it — silently skipping every entry that already
+      // existed before install (per SyncService.cs on Core: a null LastSyncedAt is what makes it
+      // return everything). Leaving it null makes the next runBackupSync — which every automatic
+      // trigger fires right after this completes — do a true full pull that includes entries.
+      // runBackupSync sets the real lastSyncedAt itself once that full sync succeeds.
       await (_db.update(_db.syncStateTable)..where((t) => t.id.equals(0))).write(
-        SyncStateTableCompanion(hasCompletedInitialSync: const Value(true), lastSyncedAt: Value(DateTime.now().toUtc())),
+        const SyncStateTableCompanion(hasCompletedInitialSync: Value(true)),
       );
     });
 
+    initialSyncStatus.value = InitialSyncStatus.success;
     return true;
   }
 
@@ -56,7 +142,18 @@ class SyncService {
   /// newer, per the last-write-wins protocol implemented by SyncService.cs on the backend.
   Future<bool> runBackupSync({void Function(int attempt, Object error)? onRetry}) async {
     final state = await _db.ensureSyncState();
-    final request = await _buildRequest(state.lastSyncedAt);
+    var since = state.lastSyncedAt;
+    if (since != null) {
+      // Self-heals installs caught by a since-fixed bug where lastSyncedAt got stamped right
+      // after the initial bootstrap pulled categories/habits but before habit entries were ever
+      // pulled — that cutoff then permanently excluded every entry that existed before it. If
+      // there's a lastSyncedAt but zero local entries, treat it as never having synced entries
+      // and force one full pull; for an account that's genuinely empty this just costs one no-op
+      // request.
+      final hasLocalEntry = await (_db.select(_db.habitEntriesTable)..limit(1)).getSingleOrNull();
+      if (hasLocalEntry == null) since = null;
+    }
+    final request = await _buildRequest(since);
 
     final response = await withColdStartRetry(() => _api.sync(request), onAttemptFailed: onRetry);
     if (response == null) return false;

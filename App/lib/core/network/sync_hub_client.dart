@@ -49,6 +49,11 @@ class SyncHubClient {
           url,
           options: HttpConnectionOptions(
             accessTokenFactory: () async => await AuthService.instance.currentAccessToken() ?? '',
+            // signalr_netcore defaults this to 2000ms, which covers only the /negotiate HTTP call —
+            // too tight for a real mobile network (DNS + TLS handshake) and especially for Core's
+            // Azure Container Apps hosting, which scales to zero: the first request after idle can
+            // take a while just to spin the container back up before it ever answers.
+            requestTimeout: 20000,
           ),
         )
         .build();

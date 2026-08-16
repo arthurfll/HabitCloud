@@ -10,7 +10,16 @@ class ApiClient {
   late final Dio _dio;
 
   ApiClient._() {
-    _dio = Dio(BaseOptions(baseUrl: Env.apiBaseUrl, connectTimeout: const Duration(seconds: 15)));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: Env.apiBaseUrl,
+        // Core runs on Azure Container Apps, which scales to zero — the first request after idle
+        // can take a while just to spin the container back up before it answers, so both timeouts
+        // need enough slack to admit that instead of failing a request that would've succeeded.
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+      ),
+    );
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {

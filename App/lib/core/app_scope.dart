@@ -13,13 +13,13 @@ class AppScope extends InheritedWidget {
   final HabitRepository habitRepository;
   final SyncService syncService;
 
-  AppScope._({super.key, required this.db, required super.child})
-    : categoryRepository = CategoryRepository(db),
-      habitRepository = HabitRepository(db),
-      syncService = SyncService(db);
+  AppScope._({super.key, required this.db, required super.child, required this.syncService})
+    : categoryRepository = CategoryRepository(db, onDirty: syncService.requestSync),
+      habitRepository = HabitRepository(db, onDirty: syncService.requestSync);
 
   factory AppScope({Key? key, required Widget child, AppDatabase? database}) {
-    return AppScope._(key: key, db: database ?? AppDatabase(), child: child);
+    final db = database ?? AppDatabase();
+    return AppScope._(key: key, db: db, syncService: SyncService(db), child: child);
   }
 
   static AppScope of(BuildContext context) {

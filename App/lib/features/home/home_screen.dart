@@ -87,8 +87,23 @@ class _TodayHabitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final category = item.habit.category;
-    final done = item.status == HabitEntryStatus.done;
     final color = hexToColor(category.color);
+
+    IconData statusIcon;
+    Color statusColor;
+    switch (item.status) {
+      case HabitEntryStatus.done:
+        statusIcon = Icons.check_circle;
+        statusColor = AppColors.primaryBlue;
+        break;
+      case HabitEntryStatus.notDone:
+        statusIcon = Icons.cancel;
+        statusColor = Colors.red;
+        break;
+      default:
+        statusIcon = Icons.radio_button_unchecked;
+        statusColor = Colors.grey;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -98,10 +113,7 @@ class _TodayHabitCard extends StatelessWidget {
         subtitle: Text(category.name),
         trailing: IconButton(
           iconSize: 32,
-          icon: Icon(
-            done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: done ? AppColors.primaryBlue : Colors.grey,
-          ),
+          icon: Icon(statusIcon, color: statusColor),
           onPressed: () => onToggle(item),
         ),
       ),

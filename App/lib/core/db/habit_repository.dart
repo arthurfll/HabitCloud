@@ -12,8 +12,11 @@ class HabitWithCategory {
 
 class HabitRepository {
   final AppDatabase _db;
+  final void Function()? _onDirty;
 
-  HabitRepository(this._db);
+  HabitRepository(this._db, {void Function()? onDirty}) : _onDirty = onDirty;
+
+  void _markDirty() => _onDirty?.call();
 
   Stream<List<HabitWithCategory>> watchAll() {
     final query = _db.select(_db.habitsTable).join([
@@ -56,9 +59,20 @@ class HabitRepository {
 
   Future<HabitEntriesTableData?> getEntry(int habitId, DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
-    return (_db.select(_db.habitEntriesTable)
-          ..where((t) => t.habitId.equals(habitId) & t.date.equals(d)))
+    return (_db.select(_db.habitEntriesTable)..where(
+          (t) => t.habitId.equals(habitId) & t.date.equals(d) & t.isDeleted.equals(false),
+        ))
         .getSingleOrNull();
+  }
+
+  /// Unlike [getEntry], includes soft-deleted rows — [toggleEntry] needs to see a tombstoned row
+  /// for the day to revive it instead of inserting a second row and hitting the unique
+  /// constraint on (habitId, date).
+  Future<HabitEntriesTableData?> _getRawEntry(int habitId, DateTime date) {
+    final d = DateTime(date.year, date.month, date.day);
+    return (_db.select(
+      _db.habitEntriesTable,
+    )..where((t) => t.habitId.equals(habitId) & t.date.equals(d))).getSingleOrNull();
   }
 
   Future<List<HabitEntriesTableData>> getEntriesInRange(int habitId, DateTime start, DateTime end) {
@@ -79,8 +93,8 @@ class HabitRepository {
     int? intervalDays,
     int? dayOfMonth,
     int? dayOfWeek,
-  }) {
-    return _db
+  }) async {
+    final id = await _db
         .into(_db.habitsTable)
         .insert(
           HabitsTableCompanion.insert(
@@ -94,18 +108,22 @@ class HabitRepository {
             updatedAt: DateTime.now().toUtc(),
           ),
         );
+    _markDirty();
+    return id;
   }
 
-  Future<void> updateName(int id, String name) {
-    return (_db.update(_db.habitsTable)..where((t) => t.id.equals(id))).write(
+  Future<void> updateName(int id, String name) async {
+    await (_db.update(_db.habitsTable)..where((t) => t.id.equals(id))).write(
       HabitsTableCompanion(name: Value(name), updatedAt: Value(DateTime.now().toUtc())),
     );
+    _markDirty();
   }
 
-  Future<void> delete(int id) {
-    return (_db.update(_db.habitsTable)..where((t) => t.id.equals(id))).write(
+  Future<void> delete(int id) async {
+    await (_db.update(_db.habitsTable)..where((t) => t.id.equals(id))).write(
       HabitsTableCompanion(isDeleted: const Value(true), updatedAt: Value(DateTime.now().toUtc())),
     );
+    _markDirty();
   }
 
   /// Cycles a day through None -> Done -> NotDone -> None, mirroring Core's
@@ -114,7 +132,7 @@ class HabitRepository {
   Future<void> toggleEntry(int habitId, DateTime date) async {
     final d = DateTime(date.year, date.month, date.day);
     final now = DateTime.now().toUtc();
-    final existing = await getEntry(habitId, d);
+    final existing = await _getRawEntry(habitId, d);
 
     if (existing == null) {
       await _db
@@ -122,6 +140,7 @@ class HabitRepository {
           .insert(
             HabitEntriesTableCompanion.insert(habitId: habitId, date: d, status: 'Done', updatedAt: now),
           );
+      _markDirty();
       return;
     }
 
@@ -138,5 +157,6 @@ class HabitRepository {
         HabitEntriesTableCompanion(isDeleted: const Value(true), updatedAt: Value(now)),
       );
     }
+    _markDirty();
   }
 }
