@@ -33,6 +33,12 @@ public class CategoryService : ICategoryService
         };
     }
 
+    public async Task<List<CategoryDto>> GetAllAsync(string userId)
+    {
+        var categories = await _repository.GetAllByUserAsync(userId);
+        return categories.Select(ToDto).ToList();
+    }
+
     public async Task<CategoryResult> CreateAsync(string userId, string name, string icon, string color)
     {
         name = name?.Trim() ?? string.Empty;

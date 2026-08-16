@@ -1,0 +1,18 @@
+@model HabitDto
+
+<div class="habit-row d-flex align-items-center gap-2 p-2 border rounded bg-white" data-id="@Model.Id">
+    <span class="category-badge" style="background-color:@Model.CategoryColor" title="@Model.CategoryName">
+        <i class="bi @Model.CategoryIcon"></i>
+    </span>
+    <input type="text"
+           class="form-control habit-name-input"
+           maxlength="50"
+           value="@Model.Name"
+           data-id="@Model.Id"
+           placeholder="Nome do hábito"
+           aria-label="Nome do hábito" />
+    <span class="badge text-bg-light text-secondary habit-frequency-badge d-none d-sm-inline-block">@Model.FrequencyLabel</span>
+    <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Id" title="Ver calendário">
+        <i class="bi bi-calendar3"></i>
+    </a>
+</div>

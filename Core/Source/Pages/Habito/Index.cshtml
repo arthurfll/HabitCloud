@@ -1,0 +1,117 @@
+@page
+@model Core.Source.Pages.Habito.IndexModel
+@{
+    ViewData["Title"] = "Hábitos";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/habito.css" asp-append-version="true" />
+}
+
+<div id="habitoApp"
+     data-max-habits="@Model.MaxHabits"
+     data-total-count="@Model.Habits.Count"
+     data-hub-url="@Url.Content("~/hubs/habit")">
+
+    <form id="antiForgeryForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">Hábitos</h1>
+        <button type="button" id="btnAddHabit" class="btn btn-primary"
+                data-bs-toggle="modal" data-bs-target="#createHabitModal"
+                @(Model.Habits.Count >= Model.MaxHabits || Model.Categories.Count == 0 ? "disabled" : "")>
+            <i class="bi bi-plus-lg me-1"></i> Adicionar hábito
+        </button>
+    </div>
+
+    @if (Model.Categories.Count == 0)
+    {
+        <p class="text-muted small">Crie uma categoria antes de adicionar hábitos. <a asp-page="/Categoria/Index">Ir para Categorias</a></p>
+    }
+
+    <p id="limitMessage" class="text-danger small @(Model.Habits.Count >= Model.MaxHabits ? "" : "d-none")">
+        Você atingiu o limite de @Model.MaxHabits hábitos.
+    </p>
+
+    <div id="habitList" class="d-flex flex-column gap-2">
+        @foreach (var habit in Model.Habits)
+        {
+            <partial name="_HabitRow" model="habit" />
+        }
+    </div>
+
+    <div id="emptyState" class="text-center text-muted py-5 @(Model.Habits.Count > 0 ? "d-none" : "")">
+        Nenhum hábito cadastrado ainda.
+    </div>
+</div>
+
+<!-- Modal: novo hábito -->
+<div class="modal fade" id="createHabitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo hábito</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="newHabitName" class="form-label">Nome</label>
+                    <input type="text" id="newHabitName" class="form-control" maxlength="50" placeholder="Ex: Beber água" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="newHabitCategory" class="form-label">Categoria</label>
+                    <select id="newHabitCategory" class="form-select">
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="newHabitFrequencyType" class="form-label">Frequência</label>
+                    <select id="newHabitFrequencyType" class="form-select">
+                        <option value="EveryNDays">A cada quantos dias</option>
+                        <option value="DayOfMonth">Todo dia X do mês</option>
+                        <option value="DayOfWeek">Um dia fixo da semana</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="fieldEveryNDays">
+                    <label for="newHabitIntervalDays" class="form-label">A cada quantos dias (0 = todo dia, 30 = todo mês)</label>
+                    <input type="number" id="newHabitIntervalDays" class="form-control" min="0" max="30" value="0" />
+                </div>
+
+                <div class="mb-3 d-none" id="fieldDayOfMonth">
+                    <label for="newHabitDayOfMonth" class="form-label">Dia do mês</label>
+                    <input type="number" id="newHabitDayOfMonth" class="form-control" min="1" max="31" value="1" />
+                </div>
+
+                <div class="mb-3 d-none" id="fieldDayOfWeek">
+                    <label for="newHabitDayOfWeek" class="form-label">Dia da semana</label>
+                    <select id="newHabitDayOfWeek" class="form-select">
+                        <option value="0">Domingo</option>
+                        <option value="1">Segunda-feira</option>
+                        <option value="2">Terça-feira</option>
+                        <option value="3">Quarta-feira</option>
+                        <option value="4">Quinta-feira</option>
+                        <option value="5">Sexta-feira</option>
+                        <option value="6">Sábado</option>
+                    </select>
+                </div>
+
+                <div id="createHabitError" class="text-danger small mt-2 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnCreateHabit" class="btn btn-primary">Criar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script src="~/js/habito.js" asp-append-version="true"></script>
+}

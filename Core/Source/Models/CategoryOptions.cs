@@ -17,6 +17,7 @@ public static class CategoryOptions
         "bi-controller", "bi-music-note-beamed", "bi-palette", "bi-camera",
         "bi-people", "bi-chat-heart",
         "bi-moon", "bi-droplet", "bi-tree",
+        "bi-airplane", "bi-cloud", "bi-plus-lg", "bi-globe", "bi-umbrella",
     };
 
     public static readonly IReadOnlyList<string> Colors = new[]

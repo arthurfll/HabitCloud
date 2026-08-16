@@ -1,8 +1,44 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model List<Core.Source.Models.Dtos.TodayHabitDto>
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@{
+    ViewData["Title"] = "Hoje";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/habito.css" asp-append-version="true" />
+}
+
+@if (!SignInManager.IsSignedIn(User))
+{
+    <div class="text-center py-5">
+        <h1 class="display-5">HabitCloud</h1>
+        <p class="text-muted">Gerencie seus hábitos e tarefas do dia a dia.</p>
+        <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">Entrar</a>
+        <a class="btn btn-outline-primary" asp-area="Identity" asp-page="/Account/Register">Criar conta</a>
+    </div>
+}
+else
+{
+    <div id="homeApp" data-hub-url="@Url.Content("~/hubs/habit")">
+        <form id="antiForgeryForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+        <h1 class="h3 mb-3">Hoje</h1>
+
+        <div id="todayHabitList" class="d-flex flex-column gap-2">
+            @foreach (var item in Model)
+            {
+                <partial name="_TodayHabitRow" model="item" />
+            }
+        </div>
+
+        <div id="emptyTodayState" class="text-center text-muted py-5 @(Model.Count > 0 ? "d-none" : "")">
+            Nenhum hábito programado para hoje.
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script src="~/js/home.js" asp-append-version="true"></script>
+}

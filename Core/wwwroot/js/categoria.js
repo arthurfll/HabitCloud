@@ -25,6 +25,17 @@ $(function () {
         });
     }
 
+    // Bootstrap ignores hide() while the modal's own show transition is still running
+    // (e.g. when a fast submit follows right after opening). Retry shortly after as a safety net.
+    function safeHideModal(modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        setTimeout(function () {
+            if (modalEl.classList.contains('show')) {
+                bootstrap.Modal.getInstance(modalEl).hide();
+            }
+        }, 350);
+    }
+
     function escapeHtml(value) {
         return $('<div>').text(value == null ? '' : value).html();
     }
@@ -206,7 +217,7 @@ $(function () {
             if (res.success) {
                 addRowToList(res.category);
                 $('#newCategoryName').val('');
-                bootstrap.Modal.getOrCreateInstance(document.getElementById('createModal')).hide();
+                safeHideModal(document.getElementById('createModal'));
             }
         }).fail(function (xhr) {
             var message = 'Não foi possível criar a categoria.';

@@ -17,6 +17,9 @@ builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IHabitRepository, HabitRepository>();
+builder.Services.AddScoped<IHabitEntryRepository, HabitEntryRepository>();
+builder.Services.AddScoped<IHabitService, HabitService>();
 builder.Services.AddSignalR();
 
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
@@ -54,5 +57,6 @@ app.MapRazorPages()
     .WithStaticAssets();
 
 app.MapHub<CategoryHub>("/hubs/category");
+app.MapHub<HabitHub>("/hubs/habit");
 
 app.Run();

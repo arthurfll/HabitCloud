@@ -1,0 +1,30 @@
+@model Core.Source.Models.Dtos.TodayHabitDto
+@{
+    var statusClass = Model.Status switch
+    {
+        "Done" => "btn-success",
+        "NotDone" => "btn-danger",
+        _ => "btn-outline-secondary",
+    };
+}
+
+<div class="habit-row d-flex align-items-center gap-2 p-2 border rounded bg-white" data-id="@Model.Id">
+    <span class="category-badge" style="background-color:@Model.CategoryColor">
+        <i class="bi @Model.CategoryIcon"></i>
+    </span>
+    <span class="flex-grow-1">@Model.Name</span>
+    <button type="button" class="habit-check-btn btn btn-sm @statusClass" data-id="@Model.Id" data-status="@Model.Status">
+        @if (Model.Status == "Done")
+        {
+            @:Feito
+        }
+        else if (Model.Status == "NotDone")
+        {
+            @:Não feito
+        }
+        else
+        {
+            <i class="bi bi-check-lg"></i>
+        }
+    </button>
+</div>

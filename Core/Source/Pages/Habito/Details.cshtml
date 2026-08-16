@@ -1,0 +1,63 @@
+@page "{id:int}"
+@model Core.Source.Pages.Habito.DetailsModel
+@{
+    ViewData["Title"] = Model.Habit.Name;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/habito.css" asp-append-version="true" />
+}
+
+<div id="habitDetailApp"
+     data-id="@Model.Habit.Id"
+     data-year="@Model.InitialYear"
+     data-month="@Model.InitialMonth"
+     data-hub-url="@Url.Content("~/hubs/habit")">
+
+    <form id="antiForgeryForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+    <script type="application/json" id="initialCalendarData">@Html.Raw(Model.InitialCalendarJson)</script>
+
+    <div class="mb-3">
+        <a asp-page="./Index" class="text-decoration-none"><i class="bi bi-arrow-left"></i> Voltar para hábitos</a>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+        <span class="category-badge" style="background-color:@Model.Habit.CategoryColor" title="@Model.Habit.CategoryName">
+            <i class="bi @Model.Habit.CategoryIcon"></i>
+        </span>
+        <input type="text"
+               id="habitNameInput"
+               class="form-control habit-name-input"
+               maxlength="50"
+               value="@Model.Habit.Name"
+               data-id="@Model.Habit.Id"
+               style="max-width: 20rem;"
+               aria-label="Nome do hábito" />
+    </div>
+    <p class="text-muted" id="habitFrequencyLabel">@Model.Habit.FrequencyLabel</p>
+
+    <div class="calendar-card">
+        <div class="calendar-header d-flex align-items-center justify-content-between mb-3">
+            <button type="button" id="btnPrevMonth" class="btn btn-outline-secondary btn-sm rounded-circle"><i class="bi bi-chevron-left"></i></button>
+            <h5 id="calendarTitle" class="mb-0"></h5>
+            <button type="button" id="btnNextMonth" class="btn btn-outline-secondary btn-sm rounded-circle"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div class="calendar-weekdays">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+
+        <div class="calendar-legend d-flex flex-wrap gap-3 mt-3 small text-muted">
+            <span><span class="legend-dot legend-done"></span> Feito</span>
+            <span><span class="legend-dot legend-not-done"></span> Não feito</span>
+            <span><span class="legend-dot legend-due"></span> A fazer</span>
+            <span><span class="legend-dot legend-not-scheduled"></span> Não programado</span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script src="~/js/habito-details.js" asp-append-version="true"></script>
+}

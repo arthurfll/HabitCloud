@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$DockerHubImage = "arthurfll/habit-cloud"
+$DockerHubImage = "arthurfll/cr"
 $DockerfilePath = "Core/Dockerfile"
 $DockerContext  = "Core"
 $GitBranch      = "main"

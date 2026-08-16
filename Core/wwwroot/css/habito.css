@@ -1,0 +1,117 @@
+.category-badge {
+    flex: 0 0 auto;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.habit-row {
+    flex-wrap: nowrap;
+}
+
+.habit-name-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.habit-frequency-badge {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .habit-row {
+        flex-wrap: wrap;
+    }
+
+    .habit-name-input {
+        flex-basis: 100%;
+        order: 1;
+    }
+}
+
+/* --- Calendário --- */
+.calendar-card {
+    background-color: #fff;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    max-width: 32rem;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.4rem;
+}
+
+.calendar-weekdays {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.4rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    background-color: #fff;
+    border: 1px solid transparent;
+    color: var(--bs-body-color);
+    user-select: none;
+}
+
+.calendar-day.empty {
+    visibility: hidden;
+}
+
+.calendar-day.not-due {
+    background-color: #fff;
+    border-color: var(--bs-border-color);
+    color: var(--bs-secondary-color);
+}
+
+.calendar-day.due {
+    background-color: #e9ecef;
+    cursor: pointer;
+}
+
+.calendar-day.due:hover {
+    filter: brightness(0.95);
+}
+
+.calendar-day.status-done {
+    background-color: #198754;
+    color: #fff;
+    cursor: pointer;
+}
+
+.calendar-day.status-not-done {
+    background-color: #dc3545;
+    color: #fff;
+    cursor: pointer;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    margin-right: 0.25rem;
+    vertical-align: middle;
+}
+
+.legend-done { background-color: #198754; }
+.legend-not-done { background-color: #dc3545; }
+.legend-due { background-color: #e9ecef; border: 1px solid var(--bs-border-color); }
+.legend-not-scheduled { background-color: #fff; border: 1px solid var(--bs-border-color); }

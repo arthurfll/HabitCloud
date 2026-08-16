@@ -5,6 +5,7 @@ namespace Core.Source.Repositories;
 public interface ICategoryRepository
 {
     Task<Category?> GetByIdAsync(int id);
+    Task<List<Category>> GetAllByUserAsync(string userId);
     Task<List<Category>> GetPageByUserAsync(string userId, int page, int pageSize);
     Task<int> CountByUserAsync(string userId);
     Task AddAsync(Category category);

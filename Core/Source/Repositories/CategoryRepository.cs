@@ -16,6 +16,12 @@ public class CategoryRepository : ICategoryRepository
     public Task<Category?> GetByIdAsync(int id) =>
         _context.Categories.FirstOrDefaultAsync(c => c.Id == id);
 
+    public Task<List<Category>> GetAllByUserAsync(string userId) =>
+        _context.Categories
+            .Where(c => c.UserId == userId)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
     public Task<List<Category>> GetPageByUserAsync(string userId, int page, int pageSize) =>
         _context.Categories
             .Where(c => c.UserId == userId)
