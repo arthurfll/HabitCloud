@@ -19,12 +19,18 @@ public class HabitRepository : IHabitRepository
     public Task<List<Habito>> GetAllByUserAsync(string userId) =>
         _context.Habitos
             .Include(h => h.Category)
-            .Where(h => h.UserId == userId)
+            .Where(h => h.UserId == userId && !h.IsDeleted)
             .OrderBy(h => h.Name)
             .ToListAsync();
 
+    public Task<List<Habito>> GetChangedSinceAsync(string userId, DateTime since) =>
+        _context.Habitos
+            .Include(h => h.Category)
+            .Where(h => h.UserId == userId && h.UpdatedAt > since)
+            .ToListAsync();
+
     public Task<int> CountByUserAsync(string userId) =>
-        _context.Habitos.CountAsync(h => h.UserId == userId);
+        _context.Habitos.CountAsync(h => h.UserId == userId && !h.IsDeleted);
 
     public async Task AddAsync(Habito habit) =>
         await _context.Habitos.AddAsync(habit);

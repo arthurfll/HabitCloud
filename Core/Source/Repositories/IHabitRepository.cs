@@ -6,6 +6,7 @@ public interface IHabitRepository
 {
     Task<Habito?> GetByIdAsync(int id);
     Task<List<Habito>> GetAllByUserAsync(string userId);
+    Task<List<Habito>> GetChangedSinceAsync(string userId, DateTime since);
     Task<int> CountByUserAsync(string userId);
     Task AddAsync(Habito habit);
     void Update(Habito habit);

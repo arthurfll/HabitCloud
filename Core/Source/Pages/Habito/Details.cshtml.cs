@@ -1,8 +1,8 @@
 using System.Text.Json;
+using Core.Source.Auth;
 using Core.Source.Models.Dtos;
 using Core.Source.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -14,12 +14,10 @@ public class DetailsModel : PageModel
     private static readonly JsonSerializerOptions CamelCaseJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IHabitService _habitService;
-    private readonly UserManager<IdentityUser> _userManager;
 
-    public DetailsModel(IHabitService habitService, UserManager<IdentityUser> userManager)
+    public DetailsModel(IHabitService habitService)
     {
         _habitService = habitService;
-        _userManager = userManager;
     }
 
     public HabitDto Habit { get; set; } = null!;
@@ -29,7 +27,7 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _habitService.GetByIdAsync(userId, id);
         if (!result.Success)
         {
@@ -50,7 +48,7 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnGetCalendarAsync(int id, int year, int month)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var (error, calendar) = await _habitService.GetCalendarAsync(userId, id, year, month);
 
         if (calendar is null)
@@ -64,14 +62,14 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnPostUpdateNameAsync(int id, string name)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _habitService.UpdateNameAsync(userId, id, name);
         return ToJson(result);
     }
 
     public async Task<IActionResult> OnPostToggleEntryAsync(int id, string date)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
 
         if (!DateOnly.TryParse(date, out var parsedDate))
         {

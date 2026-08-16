@@ -1,8 +1,8 @@
+using Core.Source.Auth;
 using Core.Source.Models;
 using Core.Source.Models.Dtos;
 using Core.Source.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -13,13 +13,11 @@ public class IndexModel : PageModel
 {
     private readonly IHabitService _habitService;
     private readonly ICategoryService _categoryService;
-    private readonly UserManager<IdentityUser> _userManager;
 
-    public IndexModel(IHabitService habitService, ICategoryService categoryService, UserManager<IdentityUser> userManager)
+    public IndexModel(IHabitService habitService, ICategoryService categoryService)
     {
         _habitService = habitService;
         _categoryService = categoryService;
-        _userManager = userManager;
     }
 
     public List<HabitDto> Habits { get; set; } = new();
@@ -28,7 +26,7 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         Habits = await _habitService.GetAllAsync(userId);
         Categories = await _categoryService.GetAllAsync(userId);
     }
@@ -41,14 +39,14 @@ public class IndexModel : PageModel
         int? dayOfMonth,
         DayOfWeek? dayOfWeek)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _habitService.CreateAsync(userId, name, categoryId, frequencyType, intervalDays, dayOfMonth, dayOfWeek);
         return ToJson(result);
     }
 
     public async Task<IActionResult> OnPostUpdateNameAsync(int id, string name)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _habitService.UpdateNameAsync(userId, id, name);
         return ToJson(result);
     }

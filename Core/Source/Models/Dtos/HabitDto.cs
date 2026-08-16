@@ -14,5 +14,8 @@ public class HabitDto
     public int? IntervalDays { get; set; }
     public int? DayOfMonth { get; set; }
     public DayOfWeek? DayOfWeek { get; set; }
+    public DateOnly StartDate { get; set; }
     public string FrequencyLabel { get; set; } = string.Empty;
+    public DateTime UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
 }

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
 
 namespace Core.Source.Models;
 
@@ -13,8 +12,6 @@ public class Habito
 
     [Required]
     public string UserId { get; set; } = string.Empty;
-
-    public IdentityUser? User { get; set; }
 
     [Required]
     public int CategoryId { get; set; }
@@ -37,4 +34,8 @@ public class Habito
     public DateOnly StartDate { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public bool IsDeleted { get; set; }
 }

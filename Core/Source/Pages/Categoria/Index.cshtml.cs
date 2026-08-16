@@ -1,8 +1,8 @@
+using Core.Source.Auth;
 using Core.Source.Models;
 using Core.Source.Models.Dtos;
 using Core.Source.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -12,12 +12,10 @@ namespace Core.Source.Pages.Categoria;
 public class IndexModel : PageModel
 {
     private readonly ICategoryService _categoryService;
-    private readonly UserManager<IdentityUser> _userManager;
 
-    public IndexModel(ICategoryService categoryService, UserManager<IdentityUser> userManager)
+    public IndexModel(ICategoryService categoryService)
     {
         _categoryService = categoryService;
-        _userManager = userManager;
     }
 
     public PagedResult<CategoryDto> Categories { get; set; } = new();
@@ -28,34 +26,34 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(int page = 1)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         Categories = await _categoryService.GetPagedAsync(userId, page, CategoryOptions.PageSize);
     }
 
     public async Task<IActionResult> OnPostCreateAsync(string name, string icon, string color)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _categoryService.CreateAsync(userId, name, icon, color);
         return ToJson(result);
     }
 
     public async Task<IActionResult> OnPostUpdateNameAsync(int id, string name)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _categoryService.UpdateNameAsync(userId, id, name);
         return ToJson(result);
     }
 
     public async Task<IActionResult> OnPostUpdateIconAsync(int id, string icon)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _categoryService.UpdateIconAsync(userId, id, icon);
         return ToJson(result);
     }
 
     public async Task<IActionResult> OnPostUpdateColorAsync(int id, string color)
     {
-        var userId = _userManager.GetUserId(User)!;
+        var userId = User.RequireUserId();
         var result = await _categoryService.UpdateColorAsync(userId, id, color);
         return ToJson(result);
     }

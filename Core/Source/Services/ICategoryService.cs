@@ -10,4 +10,5 @@ public interface ICategoryService
     Task<CategoryResult> UpdateNameAsync(string userId, int categoryId, string name);
     Task<CategoryResult> UpdateIconAsync(string userId, int categoryId, string icon);
     Task<CategoryResult> UpdateColorAsync(string userId, int categoryId, string color);
+    Task<CategoryResult> DeleteAsync(string userId, int categoryId);
 }

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
 
 namespace Core.Source.Models;
 
@@ -22,7 +21,9 @@ public class Category
     [Required]
     public string UserId { get; set; } = string.Empty;
 
-    public IdentityUser? User { get; set; }
-
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public bool IsDeleted { get; set; }
 }

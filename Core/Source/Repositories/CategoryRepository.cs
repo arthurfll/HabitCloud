@@ -18,20 +18,25 @@ public class CategoryRepository : ICategoryRepository
 
     public Task<List<Category>> GetAllByUserAsync(string userId) =>
         _context.Categories
-            .Where(c => c.UserId == userId)
+            .Where(c => c.UserId == userId && !c.IsDeleted)
             .OrderBy(c => c.Name)
             .ToListAsync();
 
     public Task<List<Category>> GetPageByUserAsync(string userId, int page, int pageSize) =>
         _context.Categories
-            .Where(c => c.UserId == userId)
+            .Where(c => c.UserId == userId && !c.IsDeleted)
             .OrderByDescending(c => c.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
+    public Task<List<Category>> GetChangedSinceAsync(string userId, DateTime since) =>
+        _context.Categories
+            .Where(c => c.UserId == userId && c.UpdatedAt > since)
+            .ToListAsync();
+
     public Task<int> CountByUserAsync(string userId) =>
-        _context.Categories.CountAsync(c => c.UserId == userId);
+        _context.Categories.CountAsync(c => c.UserId == userId && !c.IsDeleted);
 
     public async Task AddAsync(Category category) =>
         await _context.Categories.AddAsync(category);

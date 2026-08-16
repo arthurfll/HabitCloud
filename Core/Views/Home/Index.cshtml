@@ -1,6 +1,4 @@
 @model List<Core.Source.Models.Dtos.TodayHabitDto>
-@using Microsoft.AspNetCore.Identity
-@inject SignInManager<IdentityUser> SignInManager
 @{
     ViewData["Title"] = "Hoje";
 }
@@ -9,13 +7,12 @@
     <link rel="stylesheet" href="~/css/habito.css" asp-append-version="true" />
 }
 
-@if (!SignInManager.IsSignedIn(User))
+@if (User.Identity?.IsAuthenticated != true)
 {
     <div class="text-center py-5">
         <h1 class="display-5">HabitCloud</h1>
         <p class="text-muted">Gerencie seus hábitos e tarefas do dia a dia.</p>
-        <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">Entrar</a>
-        <a class="btn btn-outline-primary" asp-area="Identity" asp-page="/Account/Register">Criar conta</a>
+        <a class="btn btn-primary" asp-controller="Account" asp-action="Login">Entrar</a>
     </div>
 }
 else

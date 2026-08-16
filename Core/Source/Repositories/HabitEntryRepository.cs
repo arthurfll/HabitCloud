@@ -13,17 +13,25 @@ public class HabitEntryRepository : IHabitEntryRepository
         _context = context;
     }
 
+    public Task<HabitEntry?> GetByIdAsync(int id) =>
+        _context.HabitEntries.FirstOrDefaultAsync(e => e.Id == id);
+
     public Task<HabitEntry?> GetAsync(int habitId, DateOnly date) =>
         _context.HabitEntries.FirstOrDefaultAsync(e => e.HabitId == habitId && e.Date == date);
 
     public Task<List<HabitEntry>> GetRangeAsync(int habitId, DateOnly start, DateOnly end) =>
         _context.HabitEntries
-            .Where(e => e.HabitId == habitId && e.Date >= start && e.Date <= end)
+            .Where(e => e.HabitId == habitId && e.Date >= start && e.Date <= end && !e.IsDeleted)
             .ToListAsync();
 
     public Task<List<HabitEntry>> GetForHabitsOnDateAsync(IReadOnlyCollection<int> habitIds, DateOnly date) =>
         _context.HabitEntries
-            .Where(e => habitIds.Contains(e.HabitId) && e.Date == date)
+            .Where(e => habitIds.Contains(e.HabitId) && e.Date == date && !e.IsDeleted)
+            .ToListAsync();
+
+    public Task<List<HabitEntry>> GetChangedSinceForUserAsync(string userId, DateTime since) =>
+        _context.HabitEntries
+            .Where(e => e.Habit!.UserId == userId && e.UpdatedAt > since)
             .ToListAsync();
 
     public async Task AddAsync(HabitEntry entry) =>
@@ -31,9 +39,6 @@ public class HabitEntryRepository : IHabitEntryRepository
 
     public void Update(HabitEntry entry) =>
         _context.HabitEntries.Update(entry);
-
-    public void Remove(HabitEntry entry) =>
-        _context.HabitEntries.Remove(entry);
 
     public Task<int> SaveChangesAsync() => _context.SaveChangesAsync();
 }
