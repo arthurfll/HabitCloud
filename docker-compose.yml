@@ -7,10 +7,10 @@ services:
     container_name: core
     restart: unless-stopped
     ports:
-      - "7010:7010"
+      - "7010:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:7010
+      ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__AppDbContextConnection: "Host=postgres;Port=5432;Database=core;Username=postgres;Password=postgres"
     volumes:
       - ./Core/appsettings.json:/app/appsettings.json:ro

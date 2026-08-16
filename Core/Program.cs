@@ -99,7 +99,7 @@ builder.Services.AddRazorPages(options =>
 
 var app = builder.Build();
 
-// The container only listens on plain HTTP (Core/Dockerfile: ASPNETCORE_URLS=http://+:7010) — TLS is
+// The container only listens on plain HTTP (Core/Dockerfile: ASPNETCORE_URLS=http://+:8080) — TLS is
 // terminated by Azure Container Apps' ingress in front of it. Without this, the app sees every request
 // as HTTP, so the OIDC handler builds an http:// redirect_uri for the Cognito callback; the platform's
 // own http->https redirect then strips the query string (state/code) before it reaches /signin-oidc.
