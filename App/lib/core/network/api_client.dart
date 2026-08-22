@@ -16,8 +16,11 @@ class ApiClient {
         // Core runs on Azure Container Apps, which scales to zero — the first request after idle
         // can take a while just to spin the container back up before it answers, so both timeouts
         // need enough slack to admit that instead of failing a request that would've succeeded.
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        // Cold start itself can take up to ~30s, so a 30s timeout risks cutting the request off
+        // right as the container finishes booting; padding to 45s gives it room to actually
+        // answer instead of wasting the whole ramp-up on a request that times out at the wire.
+        connectTimeout: const Duration(seconds: 45),
+        receiveTimeout: const Duration(seconds: 45),
       ),
     );
     _dio.interceptors.add(

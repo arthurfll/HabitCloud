@@ -75,10 +75,27 @@ class HabitRepository {
     )..where((t) => t.habitId.equals(habitId) & t.date.equals(d))).getSingleOrNull();
   }
 
+  Future<int> countByCategory(int categoryId) async {
+    final rows = await (_db.select(
+      _db.habitsTable,
+    )..where((t) => t.categoryId.equals(categoryId) & t.isDeleted.equals(false))).get();
+    return rows.length;
+  }
+
   Future<List<HabitEntriesTableData>> getEntriesInRange(int habitId, DateTime start, DateTime end) {
     return (_db.select(_db.habitEntriesTable)..where(
           (t) =>
               t.habitId.equals(habitId) &
+              t.date.isBiggerOrEqualValue(start) &
+              t.date.isSmallerOrEqualValue(end) &
+              t.isDeleted.equals(false),
+        ))
+        .get();
+  }
+
+  Future<List<HabitEntriesTableData>> getEntriesForAllHabitsInRange(DateTime start, DateTime end) {
+    return (_db.select(_db.habitEntriesTable)..where(
+          (t) =>
               t.date.isBiggerOrEqualValue(start) &
               t.date.isSmallerOrEqualValue(end) &
               t.isDeleted.equals(false),

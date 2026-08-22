@@ -281,6 +281,76 @@ public class HabitService : IHabitService
     public Task<HabitEntryResult> ToggleTodayEntryAsync(string userId, int habitId) =>
         ToggleEntryAsync(userId, habitId, DateOnly.FromDateTime(DateTime.Now));
 
+    public async Task<HabitStatsDto> GetStatsAsync(string userId, int days)
+    {
+        var allowedDays = days is 7 or 30 or 90 ? days : 30;
+        var end = DateOnly.FromDateTime(DateTime.Now);
+        var start = end.AddDays(-(allowedDays - 1));
+
+        var habits = await _habitRepository.GetAllByUserAsync(userId);
+        var entries = await _entryRepository.GetForUserInRangeAsync(userId, start, end);
+        var entriesByHabitAndDate = entries.ToDictionary(e => (e.HabitId, e.Date), e => e.Status);
+
+        var dailySeries = new List<StatsDailyPointDto>();
+        for (var date = start; date <= end; date = date.AddDays(1))
+        {
+            var dueHabits = habits.Where(h => HabitScheduleCalculator.IsDue(h, date)).ToList();
+            if (dueHabits.Count == 0)
+            {
+                continue;
+            }
+
+            var doneCount = dueHabits.Count(h =>
+                entriesByHabitAndDate.TryGetValue((h.Id, date), out var status) && status == HabitEntryStatus.Done);
+
+            dailySeries.Add(new StatsDailyPointDto
+            {
+                Date = date.ToString("yyyy-MM-dd"),
+                TotalDue = dueHabits.Count,
+                TotalDone = doneCount,
+                PercentDone = Math.Round(doneCount * 100.0 / dueHabits.Count, 1),
+            });
+        }
+
+        var perHabit = new List<HabitStatsSummaryDto>();
+        foreach (var habit in habits)
+        {
+            var daysDue = 0;
+            var daysDone = 0;
+            for (var date = start; date <= end; date = date.AddDays(1))
+            {
+                if (!HabitScheduleCalculator.IsDue(habit, date))
+                {
+                    continue;
+                }
+
+                daysDue++;
+                if (entriesByHabitAndDate.TryGetValue((habit.Id, date), out var status) && status == HabitEntryStatus.Done)
+                {
+                    daysDone++;
+                }
+            }
+
+            if (daysDue == 0)
+            {
+                continue;
+            }
+
+            perHabit.Add(new HabitStatsSummaryDto
+            {
+                HabitId = habit.Id,
+                Name = habit.Name,
+                CategoryIcon = habit.Category?.Icon ?? string.Empty,
+                CategoryColor = habit.Category?.Color ?? string.Empty,
+                DaysDue = daysDue,
+                DaysDone = daysDone,
+                PercentDone = Math.Round(daysDone * 100.0 / daysDue, 1),
+            });
+        }
+
+        return new HabitStatsDto { Days = allowedDays, DailySeries = dailySeries, PerHabit = perHabit };
+    }
+
     private static HabitOperationError? ValidateOwnership(Habito? habit, string userId)
     {
         if (habit is null || habit.IsDeleted)

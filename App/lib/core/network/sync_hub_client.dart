@@ -21,7 +21,7 @@ class SyncHubClient {
         if (!completer.isCompleted) completer.complete(list.map(CategoryModel.fromJson).toList());
       });
       await connection.invoke('RequestFullSync');
-      return await completer.future.timeout(const Duration(seconds: 30));
+      return await completer.future.timeout(const Duration(seconds: 45));
     } finally {
       await connection.stop();
     }
@@ -37,7 +37,7 @@ class SyncHubClient {
         if (!completer.isCompleted) completer.complete(list.map(HabitModel.fromJson).toList());
       });
       await connection.invoke('RequestFullSync');
-      return await completer.future.timeout(const Duration(seconds: 30));
+      return await completer.future.timeout(const Duration(seconds: 45));
     } finally {
       await connection.stop();
     }
@@ -52,8 +52,9 @@ class SyncHubClient {
             // signalr_netcore defaults this to 2000ms, which covers only the /negotiate HTTP call —
             // too tight for a real mobile network (DNS + TLS handshake) and especially for Core's
             // Azure Container Apps hosting, which scales to zero: the first request after idle can
-            // take a while just to spin the container back up before it ever answers.
-            requestTimeout: 20000,
+            // take up to ~30s just to spin the container back up before it ever answers. Padded to
+            // 45s so a cold negotiate isn't cut off right as the container finishes booting.
+            requestTimeout: 45000,
           ),
         )
         .build();

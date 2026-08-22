@@ -35,6 +35,10 @@ public class HabitsController : ControllerBase
     [HttpGet("today")]
     public async Task<IActionResult> GetToday() => Ok(await _habitService.GetTodayAsync(User.RequireUserId()));
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats([FromQuery] int days = 30) =>
+        Ok(await _habitService.GetStatsAsync(User.RequireUserId(), days));
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

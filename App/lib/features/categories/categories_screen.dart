@@ -28,6 +28,34 @@ class CategoriesScreen extends StatelessWidget {
     await repo.create(name: result.name, icon: result.icon, color: result.color);
   }
 
+  Future<void> _delete(BuildContext context, CategoriesTableData category) async {
+    final scope = AppScope.of(context);
+    final habitCount = await scope.habitRepository.countByCategory(category.id);
+    if (!context.mounted) return;
+
+    if (habitCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não é possível excluir: existem $habitCount hábito(s) nesta categoria.')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir categoria?'),
+        content: Text('Tem certeza que deseja excluir "${category.name}"? Essa ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Excluir')),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      await scope.categoryRepository.delete(category.id);
+    }
+  }
+
   Future<void> _edit(BuildContext context, CategoriesTableData category) async {
     final result = await showCategoryEditorDialog(
       context,
@@ -77,7 +105,7 @@ class CategoriesScreen extends StatelessWidget {
                       IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _edit(context, category)),
                       IconButton(
                         icon: const Icon(Icons.delete_outline),
-                        onPressed: () => repo.delete(category.id),
+                        onPressed: () => _delete(context, category),
                       ),
                     ],
                   ),

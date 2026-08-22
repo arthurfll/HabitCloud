@@ -8,6 +8,7 @@ import '../../core/sync/sync_service.dart';
 import '../auth/change_password_screen.dart';
 import '../categories/categories_screen.dart';
 import '../habits/habits_screen.dart';
+import '../stats/stats_screen.dart';
 import 'home_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -23,7 +24,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _index = 0;
   Timer? _syncTimer;
 
-  static const _titles = ['Hoje', 'Hábitos', 'Categorias'];
+  static const _titles = ['Hoje', 'Hábitos', 'Categorias', 'Estatísticas'];
   static const _periodicSyncInterval = Duration(minutes: 5);
 
   @override
@@ -131,7 +132,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               valueListenable: syncService.syncVersion,
               builder: (context, version, _) => IndexedStack(
                 index: _index,
-                children: [HomeScreen(key: ValueKey(version)), const HabitsScreen(), const CategoriesScreen()],
+                children: [
+                HomeScreen(key: ValueKey(version)),
+                const HabitsScreen(),
+                const CategoriesScreen(),
+                StatsScreen(key: ValueKey(version)),
+              ],
               ),
             ),
           ),
@@ -148,6 +154,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             label: 'Hábitos',
           ),
           NavigationDestination(icon: Icon(Icons.grid_view_outlined), selectedIcon: Icon(Icons.grid_view), label: 'Categorias'),
+          NavigationDestination(icon: Icon(Icons.bar_chart_outlined), selectedIcon: Icon(Icons.bar_chart), label: 'Estatísticas'),
         ],
       ),
     );

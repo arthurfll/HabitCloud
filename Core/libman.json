@@ -18,6 +18,13 @@
       "files": [
         "signalr.min.js"
       ]
+    },
+    {
+      "library": "Chart.js@4.5.1",
+      "destination": "wwwroot/lib/chartjs",
+      "files": [
+        "chart.umd.min.js"
+      ]
     }
   ]
 }

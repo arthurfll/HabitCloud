@@ -14,4 +14,5 @@ public interface IHabitService
     Task<HabitEntryResult> ToggleEntryAsync(string userId, int habitId, DateOnly date);
     Task<List<TodayHabitDto>> GetTodayAsync(string userId);
     Task<HabitEntryResult> ToggleTodayEntryAsync(string userId, int habitId);
+    Task<HabitStatsDto> GetStatsAsync(string userId, int days);
 }

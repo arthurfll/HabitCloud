@@ -1,0 +1,34 @@
+@page
+@model Core.Source.Pages.Stats.IndexModel
+@{
+    ViewData["Title"] = "Estatísticas";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/stats.css" asp-append-version="true" />
+}
+
+<div id="statsApp" data-initial-days="@Model.InitialDays">
+    <script type="application/json" id="initialStatsData">@Html.Raw(Model.InitialStatsJson)</script>
+
+    <h4 class="mb-3">Estatísticas</h4>
+
+    <div class="btn-group mb-3" role="group" aria-label="Período">
+        <button type="button" class="btn btn-outline-primary period-btn" data-days="7">7 dias</button>
+        <button type="button" class="btn btn-outline-primary period-btn active" data-days="30">30 dias</button>
+        <button type="button" class="btn btn-outline-primary period-btn" data-days="90">90 dias</button>
+    </div>
+
+    <div class="stats-card mb-4">
+        <canvas id="statsLineChart" height="160"></canvas>
+    </div>
+
+    <h6 class="text-muted mb-2">Conclusão por hábito</h6>
+    <div id="statsPerHabitList" class="list-group mb-3"></div>
+    <p id="statsEmptyMessage" class="text-muted d-none">Nenhum hábito com dias devidos nesse período.</p>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script src="~/js/stats.js" asp-append-version="true"></script>
+}

@@ -24,6 +24,11 @@ public class HabitEntryRepository : IHabitEntryRepository
             .Where(e => e.HabitId == habitId && e.Date >= start && e.Date <= end && !e.IsDeleted)
             .ToListAsync();
 
+    public Task<List<HabitEntry>> GetForUserInRangeAsync(string userId, DateOnly start, DateOnly end) =>
+        _context.HabitEntries
+            .Where(e => e.Habit!.UserId == userId && e.Date >= start && e.Date <= end && !e.IsDeleted)
+            .ToListAsync();
+
     public Task<List<HabitEntry>> GetForHabitsOnDateAsync(IReadOnlyCollection<int> habitIds, DateOnly date) =>
         _context.HabitEntries
             .Where(e => habitIds.Contains(e.HabitId) && e.Date == date && !e.IsDeleted)

@@ -41,6 +41,13 @@ class SyncService {
   /// one-shot Future (rather than a Drift stream that updates itself) know when to refetch.
   final ValueNotifier<int> syncVersion = ValueNotifier(0);
 
+  /// The last error seen by any automatic sync trigger (app open, resume, periodic timer, or a
+  /// local edit's debounced [requestSync]). [syncNow] used to swallow these completely — a
+  /// background sync failing (offline, an expired token, Core's ~30s Azure cold start) left no
+  /// trace anywhere, so "I edited on the phone and it never reached the server" was undiagnosable.
+  /// Null means the most recent attempt succeeded (or none has run yet).
+  final ValueNotifier<Object?> lastSyncError = ValueNotifier(null);
+
   bool _isSyncing = false;
   bool _rerunRequested = false;
   Timer? _debounceTimer;
@@ -58,12 +65,24 @@ class SyncService {
     }
     _isSyncing = true;
     try {
-      final ok = await runBackupSync();
-      if (ok) syncVersion.value++;
-    } catch (_) {
-      // Silent by design — a background sync failing (e.g. offline, or the ~30s cold-start
-      // window on Core's Azure Container Apps hosting still not being enough) isn't something
-      // the user needs to see; the next trigger (edit, resume, or the periodic timer) retries it.
+      final ok = await runBackupSync(
+        onRetry: (attempt, error) {
+          debugPrint('[SyncService] backup sync attempt $attempt failed: $error');
+          lastSyncError.value = error;
+        },
+      );
+      if (ok) {
+        lastSyncError.value = null;
+        syncVersion.value++;
+      } else if (lastSyncError.value == null) {
+        // withColdStartRetry exhausted every attempt but the request itself never threw
+        // (e.g. Core returned a non-2xx that api.sync() swallowed) — record something rather
+        // than leaving lastSyncError looking like "everything is fine".
+        lastSyncError.value = 'sync failed after all retry attempts';
+      }
+    } catch (error) {
+      debugPrint('[SyncService] backup sync failed: $error');
+      lastSyncError.value = error;
     } finally {
       _isSyncing = false;
       if (_rerunRequested) {
@@ -102,7 +121,7 @@ class SyncService {
       final categories = await _hub.fetchAllCategories();
       final habits = await _hub.fetchAllHabits();
       return (categories, habits);
-    }, maxAttempts: 3, delay: const Duration(seconds: 10), onAttemptFailed: (attempt, error) {
+    }, maxAttempts: 5, delay: const Duration(seconds: 10), onAttemptFailed: (attempt, error) {
       debugPrint('[SyncService] initial sync attempt $attempt failed: $error');
       initialSyncError.value = error;
       onRetry?.call(attempt, error);
